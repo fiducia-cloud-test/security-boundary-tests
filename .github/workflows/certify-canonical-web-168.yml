@@ -1,7 +1,7 @@
 name: certify canonical-web-server PR 168
 on:
-  pull_request:
-    branches: [main]
+  push:
+    branches: [certify/canonical-web-168-20260924]
   workflow_dispatch:
 permissions:
   contents: read
