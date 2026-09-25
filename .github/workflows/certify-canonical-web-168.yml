@@ -1,0 +1,48 @@
+name: certify canonical-web-server PR 168
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  exact-head:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Require cross-org read token
+        env:
+          TEST_FLEET_GITHUB_TOKEN: ${{ secrets.TEST_FLEET_GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${TEST_FLEET_GITHUB_TOKEN:-}" || { echo "TEST_FLEET_GITHUB_TOKEN is required" >&2; exit 1; }
+      - name: Check out exact Canonical source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: canonical-cloud/canonical-web-server.rs
+          ref: 82fffc586dcabf7a84fa28968ed6c18dfa3bc0c7
+          token: ${{ secrets.TEST_FLEET_GITHUB_TOKEN }}
+          persist-credentials: false
+          path: source
+      - name: Verify exact source SHA
+        working-directory: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "82fffc586dcabf7a84fa28968ed6c18dfa3bc0c7"
+      - name: Prove release-boundary regression
+        working-directory: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          node tests/release-boundary.mjs
+      - name: Rust format check
+        working-directory: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo fmt --all -- --check
